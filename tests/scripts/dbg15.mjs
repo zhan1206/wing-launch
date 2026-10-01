@@ -1,0 +1,11 @@
+import { chromium } from 'playwright-core';
+const browser = await chromium.connectOverCDP('http://127.0.0.1:9333');
+const page = browser.contexts()[0].pages()[0];
+const dls = await page.evaluate(async () => window.bb.raw.invoke('downloads.list').catch(e => ({ err: String(e).slice(0, 80) })));
+const arr = dls.v || [];
+const summary = {};
+for (const t of arr) summary[t.state] = (summary[t.state] || 0) + 1;
+console.log('下载任务:', arr.length, JSON.stringify(summary));
+console.log('错误样例:', JSON.stringify(arr.filter(t => t.state === 'error').slice(0, 2)));
+console.log('下载中样例:', JSON.stringify(arr.filter(t => t.state === 'downloading').slice(0, 2).map(t => ({ n: t.name, r: t.received, tt: t.total }))));
+await browser.close(); process.exit(0);

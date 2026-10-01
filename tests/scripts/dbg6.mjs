@@ -1,0 +1,12 @@
+import { chromium } from 'playwright-core';
+const browser = await chromium.connectOverCDP('http://127.0.0.1:9333');
+const page = browser.contexts()[0].pages()[0];
+await page.click('#ob-next'); await page.click('#ob-next'); await new Promise(r=>setTimeout(r,600));
+await page.fill('#ob-offline-name', 'BlockBoxTester');
+const v1 = await page.evaluate(() => document.querySelector('#ob-offline-name')?.value);
+console.log('input value after fill:', JSON.stringify(v1));
+await page.click('#ob-offline-add');
+await new Promise(r=>setTimeout(r,3000));
+const v2 = await page.evaluate(() => ({ value: document.querySelector('#ob-offline-name')?.value, text: document.body.innerText.includes('添加成功'), err: document.body.innerText.match(/游戏昵称[^\n]*/)?.[0] }));
+console.log(JSON.stringify(v2));
+await browser.close(); process.exit(0);

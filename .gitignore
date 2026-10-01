@@ -1,0 +1,11 @@
+node_modules/
+release/
+test/screens/
+test/fixtures/*.jar
+*.log
+.DS_Store
+*.key
+*.pem
+secrets.json
+auth/
+.env

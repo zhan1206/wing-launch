@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' bbimg:; img-src 'self' bbimg: data: https: http: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' https: wss: ws: http: bbimg:; script-src 'self'" />
+  <title>Wing Launch</title>
+  <link rel="stylesheet" href="./styles/base.css" />
+</head>
+<body data-mode="dark">
+  <div id="bg-layer" aria-hidden="true"></div>
+  <div id="app">
+    <nav id="sidebar"></nav>
+    <main id="content">
+      <div id="topbar"><div id="breadcrumb"></div><div id="topbar-actions"></div></div>
+      <div id="page"><div class="page-loading"><div class="spinner"></div><div>正在打开页面…</div></div></div>
+    </main>
+  </div>
+  <div id="toast-holder"></div>
+  <div id="modal-holder"></div>
+  <div id="drop-overlay"><div class="drop-card"><div class="drop-icon">⬇</div><div id="drop-text">松开鼠标即可导入</div></div></div>
+  <script type="module" src="./js/main.mjs"></script>
+</body>
+</html>

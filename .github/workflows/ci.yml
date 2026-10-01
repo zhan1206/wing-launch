@@ -1,0 +1,17 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install --no-audit --no-fund
+      - name: 语法检查
+        run: |
+          fail=0
+          for f in $(find main renderer/js -name "*.js" -o -name "*.mjs" | grep -v vendor); do node --check "$f" || fail=1; done
+          exit $fail
+      - name: 依赖审计
+        run: npm audit --audit-level=high || true

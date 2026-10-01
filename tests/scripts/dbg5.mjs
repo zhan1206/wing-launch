@@ -1,0 +1,14 @@
+import { chromium } from 'playwright-core';
+const browser = await chromium.connectOverCDP('http://127.0.0.1:9333');
+const page = browser.contexts()[0].pages()[0];
+page.on('console', (m) => { if (m.type() === 'error') console.log('[console]', m.text().slice(0, 200)); });
+console.log('hash:', await page.evaluate(() => location.hash));
+await page.click('#ob-next'); await page.click('#ob-next'); await new Promise(r => setTimeout(r, 800));
+console.log('step3 text:', await page.evaluate(() => document.body.innerText.slice(0, 250).replace(/\n/g, '|')));
+await page.fill('#ob-offline-name', 'BlockBoxTester');
+await page.click('#ob-offline-add');
+await new Promise(r => setTimeout(r, 4000));
+console.log('after add:', await page.evaluate(() => document.body.innerText.slice(0, 300).replace(/\n/g, '|')));
+const direct = await page.evaluate(async () => { try { return (await window.bb.raw.invoke('accounts.list')).v; } catch (e) { return 'ERR:' + e; } });
+console.log('accounts:', JSON.stringify(direct));
+await browser.close(); process.exit(0);
