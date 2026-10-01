@@ -37,5 +37,5 @@ const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(S, 0); ihdr.writeUInt32BE(S, 4
 const raw = Buffer.alloc((S * 4 + 1) * S);
 for (let y = 0; y < S; y++) { raw[y * (S * 4 + 1)] = 0; buf.copy(raw, y * (S * 4 + 1) + 1, y * S * 4, (y + 1) * S * 4); }
 const png = Buffer.concat([Buffer.from([0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
-fs.writeFileSync(path.resolve(import.meta.dirname, '..', 'resources', 'icons', 'icon_1024.png'), png);
+fs.writeFileSync(path.resolve(import.meta.dirname, '..', '..', 'resources', 'icons', 'icon_1024.png'), png);
 console.log('parrot icon written');

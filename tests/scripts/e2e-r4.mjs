@@ -6,7 +6,7 @@ import path from 'path';
 import os from 'os';
 import AdmZip from 'adm-zip';
 
-const ROOT = path.resolve(import.meta.dirname, '..');
+const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const OUT = path.join(ROOT, 'test', 'screens');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const results = [];
@@ -50,9 +50,10 @@ try {
   /* ===== 测试 31：技术选型验证 ===== */
   await invoke(page, 'accounts.addOffline', '第四轮测试员');
   const inst31 = await invoke(page, 'instances.create', { name: 'R4 实例', versionId: '1.21.1', loader: 'fabric' });
-  const headless = execSync(`cd "${ROOT}" && BLOCKBOX_DATA_DIR="${DATA}" node scripts/core-cli.mjs launch-args ${inst31.id} 2>&1`).toString();
+  const headless = execSync(`cd "${ROOT}" && BLOCKBOX_DATA_DIR="${DATA}" node tests/scripts/core-cli.mjs launch-args ${inst31.id} 2>&1`).toString();
   step('31a', '核心模块无 UI 独立运行（生成启动参数）', /核心模块在无 UI 环境下完成启动参数生成|JAVA:/.test(headless), headless.split('\n').filter(Boolean)[1]?.slice(0, 80));
-  const dmgSize = fs.existsSync(path.join(ROOT, 'release/方块盒子-1.1.0-arm64.dmg')) ? (fs.statSync(path.join(ROOT, 'release/方块盒子-1.1.0-arm64.dmg')).size / 1e6).toFixed(0) : '?';
+  const dmgPath = path.join(ROOT, 'release/Wing-Launch-1.2.0-arm64.dmg');
+  const dmgSize = fs.existsSync(dmgPath) ? (fs.statSync(dmgPath).size / 1e6).toFixed(0) : '?';
   step('31b', '选型实测数据采集', dmgSize !== '?' && mainRssMB > 0, `DMG ${dmgSize}MB / 主进程 ${mainRssMB}MB；论证见 docs/adr/001-技术选型.md`);
 
   /* ===== 测试 32：加载器兼容 ===== */
@@ -130,7 +131,7 @@ try {
   step('38c', 'CI 配置（语法检查+审计）', /node --check/.test(ciYml) && /npm audit/.test(ciYml));
   const deps = fs.readFileSync(path.join(ROOT, 'docs/dev/dependencies.md'), 'utf8');
   step('39a', '依赖许可证记录（全部 MIT 兼容）', /MIT/.test(deps) && /playwright-core/.test(deps) && /Apache-2.0/.test(deps));
-  const sensitive = ['main', 'renderer', 'scripts'].flatMap((d) => { const out = []; const walk = (dd) => { for (const f of fs.readdirSync(dd)) { const p = path.join(dd, f); if (fs.statSync(p).isDirectory()) walk(p); else if (/\.(js|mjs|json|md)$/.test(f)) out.push(p); } }; walk(d); return out; }).filter((p) => { try { const c = fs.readFileSync(p, 'utf8'); return /sk-[A-Za-z0-9]{20,}|BEGIN (RSA |EC )?PRIVATE KEY/.test(c); } catch { return false; } });
+  const sensitive = ['src/main', 'src/renderer', 'tests/scripts'].flatMap((d) => { const out = []; const walk = (dd) => { for (const f of fs.readdirSync(dd)) { const p = path.join(dd, f); if (fs.statSync(p).isDirectory()) walk(p); else if (/\.(js|mjs|json|md)$/.test(f)) out.push(p); } }; walk(d); return out; }).filter((p) => { try { const c = fs.readFileSync(p, 'utf8'); return /sk-[A-Za-z0-9]{20,}|BEGIN (RSA |EC )?PRIVATE KEY/.test(c); } catch { return false; } });
   step('39b', '源码无敏感信息（私钥/API Key 模式扫描）', sensitive.length === 0, sensitive.join(','));
 
   await browser.close().catch(() => {});

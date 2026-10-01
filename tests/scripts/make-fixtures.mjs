@@ -5,7 +5,7 @@ import path from 'path';
 import nbt from 'prismarine-nbt';
 import zlib from 'zlib';
 
-const ROOT = path.resolve(import.meta.dirname, '..');
+const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const DIR = path.join(ROOT, 'test', 'fixtures');
 fs.mkdirSync(DIR, { recursive: true });
 
@@ -73,7 +73,7 @@ console.log('✓ test-mod.jar（' + modBytes.length + ' bytes）');
     game: 'minecraft',
     versionId: '1.0.0',
     name: '测试整合包',
-    summary: 'BlockBox 测试用整合包',
+    summary: 'Wing Launch 测试用整合包',
     files: [
       {
         path: 'mods/' + file.filename,

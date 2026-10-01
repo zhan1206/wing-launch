@@ -109,7 +109,7 @@ const png = Buffer.concat([
   chunk('IDAT', zlib.deflateSync(raw, { level: 9 })),
   chunk('IEND', Buffer.alloc(0)),
 ]);
-const outDir = path.resolve(import.meta.dirname, '..', 'resources', 'icons');
+const outDir = path.resolve(import.meta.dirname, '..', '..', 'resources', 'icons');
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'icon_1024.png'), png);
 console.log('icon written:', path.join(outDir, 'icon_1024.png'), png.length, 'bytes');

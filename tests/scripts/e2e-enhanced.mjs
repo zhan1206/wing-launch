@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-const ROOT = path.resolve(import.meta.dirname, '..');
+const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const OUT = path.join(ROOT, 'test', 'screens');
 const FIX = path.join(ROOT, 'test', 'fixtures');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -20,7 +20,7 @@ const invoke = (page, ch, payload) => Promise.race([
 ]);
 
 // 临时数据目录（含中文、空格、括号——同时覆盖测试10）
-const DATA = path.join(os.tmpdir(), '方块 盒子(增强测试)');
+const DATA = path.join(os.tmpdir(), 'WingLaunch-enhanced-test');
 fs.rmSync(DATA, { recursive: true, force: true });
 
 const child = spawn(path.join(ROOT, 'node_modules/.bin/electron'), ['.', '--remote-debugging-port=9333'], { cwd: ROOT, env: { ...process.env, BLOCKBOX_DATA_DIR: DATA }, stdio: 'ignore' });
@@ -186,7 +186,7 @@ zout.close(); shutil.move(dst,src)"`, { shell: '/bin/zsh' });
   });
   void ariaOk;
   await page.screenshot({ path: path.join(OUT, 't14-a11y.png') });
-  step('14c', '弹窗具备 role=dialog + aria-modal（代码级）', (await fs.promises.readFile(path.join(ROOT, 'renderer/js/ui.js'), 'utf8')).includes("setAttribute('aria-modal', 'true')"));
+  step('14c', '弹窗具备 role=dialog + aria-modal（代码级）', (await fs.promises.readFile(path.join(ROOT, 'src/renderer/js/ui.js'), 'utf8')).includes("setAttribute('aria-modal', 'true')"));
 
   /* ===== 测试19：帮助中心与诊断 ===== */
   await page.evaluate(() => { location.hash = '#/help'; });

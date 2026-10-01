@@ -8,6 +8,7 @@ const sources = require('../core/download/sources');
 const javaMgr = require('../java/java-manager');
 const { UserError } = require('../core/ipc-gateway');
 const { broadcast, toast } = require('../core/emitter');
+const zipsafe = require('../core/zipsafe');
 const { mapMajor } = require('../java/java-manager');
 const servers = require('../server/servers');
 
@@ -76,10 +77,12 @@ async function install({ path: packPath, name = null, createServer = false }) {
     extractOverride(zip, 'overrides', dir);
     // 下载文件
     const files = (idx.files || []).filter((f) => f.env?.client !== 'unavailable');
-    const dl = files.map((f) => ({
-      name: path.basename(f.path), type: '模组', url: f.downloads[0], dest: path.join(dir, f.path),
-      sha1: f.hashes?.sha1 || null, size: f.fileSize || 0,
-    }));
+    const dl = files
+      .filter((f) => zipsafe.safeName(f.path)) // 索引里的相对路径可能带 ../，跳过以免写到实例目录之外
+      .map((f) => ({
+        name: path.basename(f.path), type: '模组', url: f.downloads[0], dest: path.join(dir, zipsafe.safeName(f.path)),
+        sha1: f.hashes?.sha1 || null, size: f.fileSize || 0,
+      }));
     progress('modpack', 'mods', `正在下载整合包内容 ${dl.length} 个文件…`, 40, 100);
     if (dl.length) {
       const res = await manager.addBulk(dl);
@@ -92,7 +95,9 @@ async function install({ path: packPath, name = null, createServer = false }) {
     extractOverride(zip, 'overrides', dir);
     progress('modpack', 'mods', `正在解析整合包中的 ${manifest.files?.length || 0} 个文件（CurseForge 需要在线解析）…`, 40, 100);
     const resolved = await resolveCurseforgeFiles(manifest.files || []);
-    const dl = resolved.ok.map((f) => ({ name: f.filename, type: '模组', url: f.url, dest: path.join(dir, 'mods', f.filename) }));
+    const dl = resolved.ok
+      .filter((f) => zipsafe.safeName(f.filename))
+      .map((f) => ({ name: f.filename, type: '模组', url: f.url, dest: path.join(dir, 'mods', zipsafe.safeName(f.filename)) }));
     if (dl.length) {
       const res = await manager.addBulk(dl);
       missing = res.failures || [];
@@ -154,7 +159,7 @@ async function fetchCfProject(projectId) {
     try {
       const ctl = new AbortController();
       const timer = setTimeout(() => ctl.abort(), 8000);
-      const res = await fetch(u, { signal: ctl.signal, headers: { 'user-agent': 'BlockBox/1.0' } });
+      const res = await fetch(u, { signal: ctl.signal, headers: { 'user-agent': 'WingLaunch/1.0' } });
       clearTimeout(timer);
       if (!res.ok) continue;
       const j = await res.json();

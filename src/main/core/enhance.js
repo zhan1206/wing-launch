@@ -171,7 +171,7 @@ function fileTree(base, depth = 0, maxDepth = 3) {
 }
 
 let apiServer = null, apiToken = null;
-function startLocalApi(port) {
+async function startLocalApi(port) {
   if (apiServer) return { port: apiServer.address().port };
   apiToken = crypto.randomBytes(16).toString('hex');
   apiServer = http.createServer((req, res) => {
@@ -193,7 +193,19 @@ function startLocalApi(port) {
       });
     } else { res.statusCode = 404; res.end(JSON.stringify({ error: '未知接口' })); }
   });
-  apiServer.listen(port || 0, '127.0.0.1');
+  await new Promise((resolve, reject) => {
+    const onError = (e) => {
+      try { apiServer.close(); } catch { /* */ }
+      apiServer = null; apiToken = null;
+      reject(new UserError(e.code === 'EADDRINUSE' ? `端口 ${port} 已被占用，请换一个端口再试。` : '本地 API 启动失败：' + e.message));
+    };
+    apiServer.once('error', onError);
+    apiServer.listen(port || 0, '127.0.0.1', () => {
+      apiServer.removeListener('error', onError);
+      apiServer.on('error', () => { /* 运行期错误不应让主进程崩溃 */ });
+      resolve();
+    });
+  });
   return { port: apiServer.address().port, token: apiToken };
 }
 function stopLocalApi() { try { apiServer?.close(); } catch { /* */ } apiServer = null; apiToken = null; return true; }
@@ -266,9 +278,9 @@ function registerAll(register) {
       }
       return `modLoader="javafml"\nloaderVersion="[47,)"\nlicense="${data.license || 'MIT'}"\n[[mods]]\nmodId="${data.id || 'my_mod'}"\nversion="${data.version || '0.1.0'}"\ndisplayName="${data.name || '我的模组'}"\nauthors="${data.author || ''}"\ndescription='''${data.description || ''}'''\n[[dependencies.${data.id || 'my_mod'}]]\n    modId="minecraft"\n    mandatory=true\n    versionRange="[1.20.1,1.21)"\n`;
     },
-    'localApi.start': ({ port }) => {
+    'localApi.start': async ({ port }) => {
       if (!config.get().localApiEnabled) throw new UserError('请先在设置中开启本地 API。');
-      const r = startLocalApi(port);
+      const r = await startLocalApi(port);
       return { ...r, docs: apiDocs() };
     },
     'localApi.stop': () => stopLocalApi(),

@@ -1,4 +1,4 @@
-# BlockBox IPC 契约（主进程 ↔ 渲染进程）
+# Wing Launch IPC 契约（主进程 ↔ 渲染进程）
 
 渲染进程通过 `window.bb.*` 调用主进程；主进程通过 `bb:*` 通道向渲染进程广播事件。
 所有方法返回 Promise；失败时抛出 `{ message: 中文错误, code?: string }`。

@@ -59,8 +59,8 @@ function buildLaunchArgs({ meta, account, instance, instanceDir, nativesDir, cla
     user_properties: '{}',
     version_type: meta.type || 'release',
     natives_directory: nativesDir,
-    launcher_name: 'BlockBox',
-    launcher_version: '1.1.0',
+    launcher_name: 'Wing Launch',
+    launcher_version: '1.2.0',
     classpath: classpath.join(sep),
     classpath_separator: sep,
     library_directory: dirs().libraries,
@@ -202,7 +202,13 @@ async function launch(instance, { accountId, preferredMajor = null, sessionOverr
       if (cvm) need = Math.round(parseFloat(cvm[1]) - 44); // 61→17, 65→21, 52→8
       if (need && need !== want && need >= 8 && need <= 25) {
         toast(`Java ${want} 启动失败了，正在尝试 Java ${need}。`, 'warn', 5000);
-        const { java: java2 } = { java: await javaMgr.ensure(need) };
+        try {
+          await javaMgr.ensure(need);
+        } catch (e) {
+          // exit 回调是浮空异步：此处若 reject 会变成 unhandledRejection，必须自行兜底并告知用户
+          broadcast('bb:launch-exit', { session, instanceId: instance.id, code, signal, startedAt, lifetimeMs, crashed: true, lastLines: info.lines.slice(-80), errorMessage: '自动切换 Java 失败：' + (e.userMessage || e.message) });
+          return;
+        }
         sessions.delete(session);
         return launch(instance, { accountId: account.id, preferredMajor: need, sessionOverride: session });
       }
@@ -211,6 +217,8 @@ async function launch(instance, { accountId, preferredMajor = null, sessionOverr
     lastExit.set(instance.id, { lastLines: info.lastLines, code, lifetimeMs });
     broadcast('bb:launch-exit', { session, instanceId: instance.id, code, signal, startedAt, lifetimeMs, crashed, lastLines: info.lastLines });
     if (!crashed && code === 0) { /* 正常退出 */ }
+    // 会话记录（含最多 600 行日志）退出后延迟回收：保留崩溃分析窗口，又不让 sessions 只增不减
+    setTimeout(() => sessions.delete(session), 5 * 60 * 1000);
   });
 
   // 90 秒仍未见游戏窗口：给出可能原因提示，避免用户以为卡死
@@ -231,6 +239,12 @@ async function launch(instance, { accountId, preferredMajor = null, sessionOverr
 }
 
 function getSession(session) { return sessions.get(session); }
+// 由游戏进程 pid 反查实例：供「关闭游戏进程」在退出后创建存档快照
+function instanceIdByPid(pid) {
+  for (const s of sessions.values()) { if (s.pid === pid && !s.exited) return s.instanceId; }
+  for (const s of sessions.values()) { if (s.pid === pid) return s.instanceId; }
+  return null;
+}
 
 function anyAlive() { for (const s of sessions.values()) { if (!s.exited) return true; } return false; }
-module.exports = { launch, getSession, buildLaunchArgs, getLastExit: (id) => lastExit.get(id), anyAlive };
+module.exports = { launch, getSession, instanceIdByPid, buildLaunchArgs, getLastExit: (id) => lastExit.get(id), anyAlive };

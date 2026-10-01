@@ -245,8 +245,9 @@ function makeBackup(instanceId, { name, kind = 'full', auto = false } = {}) {
   const fname = `${stamp}-${(name || (auto ? '自动备份' : '手动备份')).replace(/[\\/:*?"<>|]/g, '_')}.bbbak`;
   const zip = new AdmZip();
   const includeLight = ['config', 'options.txt', 'servers.dat', '.blockbox'];
-  const includeFull = [...includeLight, 'mods', 'saves', 'resourcepacks', 'shaderpacks'];
-  for (const item of (kind === 'full' ? includeFull : includeLight)) {
+  const includeSave = [...includeLight, 'saves']; // 存档快照：含存档，但不含体积庞大的模组与资源包
+  const includeFull = [...includeSave, 'mods', 'resourcepacks', 'shaderpacks'];
+  for (const item of (kind === 'full' ? includeFull : kind === 'save' ? includeSave : includeLight)) {
     const p = path.join(dir, item);
     if (!fs.existsSync(p)) continue;
     if (fs.statSync(p).isDirectory()) zip.addLocalFolder(p, item);
@@ -256,10 +257,10 @@ function makeBackup(instanceId, { name, kind = 'full', auto = false } = {}) {
   const meta = backupMeta(instanceId);
   meta[fname] = { kind, auto, name: name || (auto ? '自动备份' : '手动备份'), time: Date.now() };
   configWriteJson(instanceId, 'backup-meta.json', meta);
-  // 清理旧的自动备份：轻量保留 3 份，完整保留 2 份
-  for (const k of ['light', 'full']) {
+  // 清理旧的自动备份：轻量/存档各保留 3 份，完整保留 2 份
+  for (const k of ['light', 'save', 'full']) {
     const autos = backupsList(instanceId).filter((b) => b.kind === k && meta[b.file]?.auto);
-    for (const old of autos.slice(k === 'light' ? 3 : 2)) {
+    for (const old of autos.slice(k === 'full' ? 2 : 3)) {
       trash.deleteToTrash(path.join(bdir, old.file), '备份');
       delete meta[old.file];
     }

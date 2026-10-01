@@ -122,13 +122,16 @@ function startGuestTcpServer() {
       socket.on('error', () => { /* */ });
     });
     srv.on('error', reject);
-    srv.listen(0, '127.0.0.1', () => resolve(srv.address().port));
+    // 必须把 server 对象一并返回：否则房间销毁时无法 close，端口会被永久占用
+    srv.listen(0, '127.0.0.1', () => resolve({ srv, port: srv.address().port }));
   });
 }
 
 function setupGuestTcp() {
-  return startGuestTcpServer().then((port) => {
-    if (room) { room.tcpServer = null; room.tcpPort = port; }
+  return startGuestTcpServer().then(({ srv, port }) => {
+    if (!room) { try { srv.close(); } catch { /* */ } return null; } // 房间已销毁，立即回收监听
+    room.tcpServer = srv;
+    room.tcpPort = port;
     broadcast('bb:p2p-status', { state: 'connected', text: `连接已建立！`, localPort: port });
     broadcastPlayers();
     return port;
@@ -181,7 +184,9 @@ function initBridgeIpc() {
     switch (ev.type) {
       case 'status':
         broadcast('bb:p2p-status', { state: ev.state, reason: ev.reason, text: ev.text, localPort: ev.localPort });
-        if (ev.state === 'connected' && room?.role === 'guest') setupGuestTcp();
+        if (ev.state === 'connected' && room?.role === 'guest') {
+          setupGuestTcp().catch(() => broadcast('bb:p2p-status', { state: 'error', reason: '本地端口监听失败，请退出房间后重试。' }));
+        }
         if (ev.state === 'connected' && room?.role === 'host') { /* 房主等待隧道 */ }
         if (ev.state === 'error') { room && (room.lastActivity = Date.now()); }
         break;

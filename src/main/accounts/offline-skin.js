@@ -24,7 +24,7 @@ async function start() {
     res.setHeader('content-type', 'application/json');
     if (url === '/' || url === '') {
       res.end(JSON.stringify({
-        meta: { serverName: '方块盒子本地皮肤', implementationName: 'blockbox-local-skin', implementationVersion: '1.0.0' },
+        meta: { serverName: 'Wing Launch 本地皮肤', implementationName: 'winglaunch-local-skin', implementationVersion: '1.0.0' },
         skinDomains: ['127.0.0.1', 'localhost'],
         signaturePublickey: b64(publicKeyDer),
       }));

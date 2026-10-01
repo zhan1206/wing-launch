@@ -1,14 +1,14 @@
 #!/bin/bash
-# 方块盒子 macOS 打包：.app（arm64 + x64）与 .dmg
+# Wing Launch macOS 打包：.app（arm64 + x64）与 .dmg
 set -e
 cd "$(dirname "$0")/.."
 
 VERSION=$(node -e "console.log(require('./package.json').version)")
 OUT="release"
-APP_NAME="方块盒子"
+APP_NAME="Wing Launch"
 
 echo "== 1/4 生成图标"
-node scripts/make-icon.mjs
+node tests/scripts/make-icon.mjs
 ICONS_DIR="resources/icons/icon.iconset"
 mkdir -p "$ICONS_DIR"
 SRC="resources/icons/icon_1024.png"
@@ -30,9 +30,9 @@ npx @electron/packager . "$APP_NAME" \
   --out="$OUT" --icon=resources/icons/icon.icns \
   --app-bundle-id=cn.blockbox.launcher \
   --app-version="$VERSION" \
-  --app-copyright="Copyright 2026 BlockBox" \
+  --app-copyright="Copyright 2026 Wing Launch" \
   --overwrite --prune=true \
-  --ignore="^/release" --ignore="^/test" --ignore="^/docs" --ignore="^/scripts" --ignore="^/\.zcode" \
+  --ignore="^/release" --ignore="^/tests" --ignore="^/test" --ignore="^/docs" --ignore="^/\.zcode" \
   --ignore="^/resources/icons/icon\.iconset"
 
 echo "== 3/4 打包 x64 .app（Intel）"
@@ -41,16 +41,16 @@ npx @electron/packager . "$APP_NAME" \
   --out="$OUT" --icon=resources/icons/icon.icns \
   --app-bundle-id=cn.blockbox.launcher \
   --app-version="$VERSION" \
-  --app-copyright="Copyright 2026 BlockBox" \
+  --app-copyright="Copyright 2026 Wing Launch" \
   --overwrite --prune=true \
-  --ignore="^/release" --ignore="^/test" --ignore="^/docs" --ignore="^/scripts" --ignore="^/\.zcode" \
+  --ignore="^/release" --ignore="^/tests" --ignore="^/test" --ignore="^/docs" --ignore="^/\.zcode" \
   --ignore="^/resources/icons/icon\.iconset"
 
 echo "== 4/4 生成 DMG"
 for arch in arm64 x64; do
   APP_DIR=$(ls -d "$OUT/$APP_NAME-darwin-$arch"/*.app)
-  DMG="$OUT/方块盒子-$VERSION-$arch.dmg"
-  hdiutil create -volname "方块盒子" -srcfolder "$(dirname "$APP_DIR")" -ov -format UDZO "$DMG" >/dev/null
+  DMG="$OUT/Wing-Launch-$VERSION-$arch.dmg"
+  hdiutil create -volname "Wing Launch" -srcfolder "$(dirname "$APP_DIR")" -ov -format UDZO "$DMG" >/dev/null
   echo "DMG: $DMG"
 done
 

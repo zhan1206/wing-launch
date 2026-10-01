@@ -23,7 +23,6 @@ export function pushNotification(n) {
     list.unshift({ ...n, time: Date.now() });
     localStorage.setItem(NOTIFY_KEY, JSON.stringify(list.slice(0, 50)));
     renderBell();
-  injectCloseGameFab();
   } catch { /* */ }
 }
 function renderBell() {
@@ -148,7 +147,7 @@ function renderSidebar(currentPath, settings) {
   const spacer = document.createElement('div'); spacer.className = 'nav-spacer'; sb.appendChild(spacer);
   const foot = document.createElement('div');
   foot.className = 'nav-foot';
-  foot.textContent = 'Wing Launch v' + (window.__APP_VERSION__ || '1.1.0');
+  foot.textContent = 'Wing Launch v' + (window.__APP_VERSION__ || '1.2.0');
   sb.appendChild(foot);
 }
 
@@ -245,6 +244,7 @@ async function boot() {
 }
 // AK.6 关闭游戏进程按钮：游戏运行时全局常驻，二次确认+关闭后引导
 function injectCloseGameFab() {
+  if (document.getElementById('close-game-fab')) return; // 幂等：避免重复插入按钮与轮询定时器
   const fab = document.createElement('button');
   fab.id = 'close-game-fab';
   fab.setAttribute('aria-label', '关闭游戏进程');

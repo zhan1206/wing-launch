@@ -15,6 +15,7 @@ const javaMgr = require('../java/java-manager');
 const { getMergedMeta } = require('../meta/versions');
 const trash = require('../core/trash');
 const modpack = require('../modpack/modpack');
+const zipsafe = require('../core/zipsafe');
 
 const FILE = () => dirs().serversFile;
 function load() { return readJson(FILE(), { servers: [] }); }
@@ -89,7 +90,9 @@ async function createFromModpack({ info, zip, instanceName, dir: _clientDir }) {
   if (info.type === 'mrpack') {
     const idx = JSON.parse(zip.getEntry('modrinth.index.json').getData().toString('utf8'));
     const serverFiles = (idx.files || []).filter((f) => f.env?.server === 'required' || (f.env?.server !== 'unsupported' && f.env?.client === 'required'));
-    const dl = serverFiles.map((f) => ({ name: path.basename(f.path), type: '模组', url: f.downloads[0], dest: path.join(dir, f.path), sha1: f.hashes?.sha1 }));
+    const dl = serverFiles
+      .filter((f) => zipsafe.safeName(f.path)) // 索引里的相对路径可能带 ../，跳过以免写到服务器目录之外
+      .map((f) => ({ name: path.basename(f.path), type: '模组', url: f.downloads[0], dest: path.join(dir, zipsafe.safeName(f.path)), sha1: f.hashes?.sha1 }));
     if (dl.length) await manager.addBulk(dl);
     modpack.extractOverride(zip, 'overrides', dir);
   } else {
@@ -97,7 +100,9 @@ async function createFromModpack({ info, zip, instanceName, dir: _clientDir }) {
     // CF 模组：尽力下载全部
     const manifest = JSON.parse(zip.getEntry('manifest.json').getData().toString('utf8'));
     const resolved = await require('../modpack/modpack').resolveCurseforgeFiles(manifest.files || []);
-    const dl = resolved.ok.map((f) => ({ name: f.filename, type: '模组', url: f.url, dest: path.join(dir, 'mods', f.filename) }));
+    const dl = resolved.ok
+      .filter((f) => zipsafe.safeName(f.filename))
+      .map((f) => ({ name: f.filename, type: '模组', url: f.url, dest: path.join(dir, 'mods', zipsafe.safeName(f.filename)) }));
     if (dl.length) await manager.addBulk(dl);
   }
   writeServerProperties(dir, 25565);
@@ -212,6 +217,13 @@ async function start(id) {
 
     const { cmd } = await ensureServerFiles(s);
     info.proc = spawn(cmd[0], cmd.slice(1), { cwd: s.dir, env: process.env });
+    // spawn 失败（Java 被删除 / 无执行权限）会异步 emit 'error'，不监听会变成未捕获异常并把状态卡在 starting
+    info.proc.on('error', (e) => {
+      pushConsole(id, `\n[无法启动服务器] ${e.message}\n`, 'error');
+      running.delete(id);
+      info.starting = false;
+      broadcastServerStatus(id);
+    });
     info.buffer = [];
     info.proc.stdout.on('data', (d) => pushConsole(id, d.toString('utf8')));
     info.proc.stderr.on('data', (d) => pushConsole(id, d.toString('utf8'), 'warn'));

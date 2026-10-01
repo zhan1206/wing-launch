@@ -21,7 +21,7 @@ if (cmd === 'list') {
   console.log('GAME:', game.join(' ').slice(0, 300), '…');
   console.log('✅ 核心模块在无 UI 环境下完成启动参数生成');
 } else {
-  console.log('用法: node scripts/core-cli.mjs [list | launch-args <实例id>]（无 UI 调用核心逻辑）');
+  console.log('用法: node tests/scripts/core-cli.mjs [list | launch-args <实例id>]（无 UI 调用核心逻辑）');
 }
 import path from 'path';
 process.exit(0);

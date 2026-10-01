@@ -24,7 +24,7 @@ function saveWindowState() {
 }
 function createTray() {
   try {
-    const iconPath = path.join(__dirname, '..', 'resources', 'icons', 'icon_1024.png');
+    const iconPath = path.join(__dirname, '..', '..', 'resources', 'icons', 'icon_1024.png');
     const t = new Tray(nativeImage.createFromPath(iconPath).resize({ width: 22, height: 22 }));
     t.setToolTip('Wing Launch（WL）');
     const rebuild = () => {
@@ -124,8 +124,9 @@ app.whenReady().then(async () => { try {
       dataDir: dirs().root, isFirstRun: config.isFirstRun(), locale: app.getLocale(),
     }),
     'toast.push': ({ text, type, ms }) => { require('./core/emitter').toast(text, type, ms); return true; },
-    'clip.write': (p) => { const text = typeof p === 'string' ? p : p?.text; clipboard.writeText(String(text ?? '')); return true; },
-    'clip.read': () => clipboard.readText(),
+    // Electron 44 起 clipboard 读写方法改为异步（W3C Clipboard API 对齐），必须 await
+    'clip.write': async (p) => { const text = typeof p === 'string' ? p : p?.text; await clipboard.writeText(String(text ?? '')); return true; },
+    'clip.read': async () => clipboard.readText(),
     'shell.openPath': (p) => { const t = typeof p === 'string' ? p : p?.p; if (/^https?:\/\//.test(t)) return shell.openExternal(t); return shell.openPath(t); },
     'shell.showInFolder': (p) => { shell.showItemInFolder(typeof p === 'string' ? p : p?.p); return true; },
     'window.control': ({ action }) => {
@@ -209,7 +210,24 @@ app.whenReady().then(async () => { try {
         require('fs').appendFileSync(require('./core/paths').dirs().logs + '/app.log', '[' + new Date().toISOString() + '] [INFO] 用户通过「关闭游戏进程」按钮结束游戏 pid=' + pidList.join(',') + ' 原因=' + (reason || '用户主动') + '\n');
         setTimeout(() => {
           for (const p2 of pidList) { try { process.kill(p2, 0); process.kill(p2, 'SIGKILL'); } catch { /* 已退出 */ } }
-          require('./core/emitter').broadcast('bb:toast', { text: '游戏进程已关闭。已自动创建存档快照，可到实例备份页查看。', type: 'ok', ms: 6000 });
+          // 兑现「已自动创建存档快照」：真正落盘一份含 saves 的快照（kind:'save'）
+          let text = '游戏进程已关闭。';
+          let type = 'ok';
+          try {
+            const launchMod = require('./instances/launch');
+            const instId = pidList.map((p3) => launchMod.instanceIdByPid(p3)).find(Boolean);
+            if (instId) {
+              require('./instances/contents').makeBackup(instId, { name: '关闭游戏后自动快照', kind: 'save', auto: true });
+              text = '游戏进程已关闭，已自动创建存档快照，可到实例备份页查看。';
+            } else {
+              text = '游戏进程已关闭。这次没能定位到对应实例，未创建存档快照。';
+              type = 'warn';
+            }
+          } catch (e) {
+            text = '游戏进程已关闭，但存档快照创建失败：' + (e && e.message ? e.message : e);
+            type = 'warn';
+          }
+          require('./core/emitter').broadcast('bb:toast', { text, type, ms: 6000 });
         }, 5000);
         return { ok: true, message: '正在安全关闭游戏进程（最多等待 5 秒保存世界）…' };
       } catch (e) { return { ok: false, message: '关闭失败：' + e.message }; }

@@ -3,7 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const { UserError } = require('./ipc-gateway');
 
-const DEFAULTS = { maxTotalBytes: 4 * 1024 * 1024 * 1024, maxEntries: 30000, maxRatio: 300 };
+// maxEntryBytes：单条目上限。膨胀比对「存储型条目」无效（比值恒为 1），
+// 只靠 maxTotalBytes 时单个条目仍可能一次 getData() 分配数 GB 内存。
+const DEFAULTS = { maxTotalBytes: 4 * 1024 * 1024 * 1024, maxEntryBytes: 1024 * 1024 * 1024, maxEntries: 30000, maxRatio: 300 };
 
 function safeName(entryName) {
   // 拒绝绝对路径、盘符、.. 上跳
@@ -22,6 +24,7 @@ function safeExtract(zip, destDir, { prefix = '', limits = {} } = {}) {
   for (const e of entries) {
     const us = e.header ? (e.header.size || 0) : 0;
     total += us;
+    if (us > cfg.maxEntryBytes) throw new UserError('这个压缩包里有一个异常巨大的文件，为保护内存已停止导入。');
     if (total > cfg.maxTotalBytes) throw new UserError('这个压缩包解压后的体积异常庞大，为防止占满磁盘已停止导入。');
     if (us > 0 && e.header.compressedSize > 0) {
       const ratio = us / e.header.compressedSize;
@@ -49,6 +52,7 @@ function assertSafe(zip, limits = {}) {
     if (safeName(e.entryName) === null) throw new UserError('这个压缩包里有路径不安全的文件（试图写到预期目录之外），已停止导入。');
     const us = e.header ? (e.header.size || 0) : 0;
     total += us;
+    if (us > cfg.maxEntryBytes) throw new UserError('这个压缩包里有一个异常巨大的文件，为保护内存已停止导入。');
     if (total > cfg.maxTotalBytes) throw new UserError('这个压缩包解压后的体积异常庞大，为防止占满磁盘已停止导入。');
   }
   return true;

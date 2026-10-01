@@ -1,11 +1,11 @@
 // CDP 冒烟测试：打开每个页面 → 截图 → 收集控制台错误
-// 用法: node scripts/smoke.mjs [--setup  "引导完成后数据"] [--only hash1,hash2]
+// 用法: node tests/scripts/smoke.mjs [--setup  "引导完成后数据"] [--only hash1,hash2]
 import { spawn } from 'child_process';
 import { mkdirSync, writeFileSync, existsSync, rmSync } from 'fs';
 import path from 'path';
 import { chromium } from 'playwright-core';
 
-const ROOT = path.resolve(import.meta.dirname, '..');
+const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const OUT = path.join(ROOT, 'test', 'screens');
 mkdirSync(OUT, { recursive: true });
 

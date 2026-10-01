@@ -81,10 +81,20 @@ async function pump() {
 
 function fmtSize(n) { return n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.max(0, Math.round(n / 1e3)) + ' KB'; }
 
-function checkHash(t) {
+// 流式计算摘要：避免把整个（可能是几百 MB 的）文件一次性读进内存
+function hashFile(file, algo) {
+  return new Promise((resolve, reject) => {
+    const h = crypto.createHash(algo);
+    const s = fs.createReadStream(file);
+    s.on('error', reject);
+    s.on('data', (d) => h.update(d));
+    s.on('end', () => resolve(h.digest('hex')));
+  });
+}
+async function checkHash(t) {
   try {
-    if (t.sha256) return crypto.createHash('sha256').update(fs.readFileSync(t.dest)).digest('hex') !== t.sha256;
-    if (t.sha1) return crypto.createHash('sha1').update(fs.readFileSync(t.dest)).digest('hex') !== t.sha1;
+    if (t.sha256) return (await hashFile(t.dest, 'sha256')) !== t.sha256;
+    if (t.sha1) return (await hashFile(t.dest, 'sha1')) !== t.sha1;
   } catch { return false; }
   return false;
 }
@@ -108,7 +118,7 @@ async function runTask(t) {
   try {
     await attempt();
     // 校验失败：自动删除重下一次，仍失败才报错（保持 downloading 状态，防止 pump 重复启动）
-    if (checkHash(t) && !t._reverified) {
+    if ((await checkHash(t)) && !t._reverified) {
       t._reverified = true;
       fs.rmSync(t.dest, { force: true });
       t.received = 0;
@@ -117,7 +127,7 @@ async function runTask(t) {
       t._running = false;
       return r;
     }
-    if (checkHash(t)) throw new Error('文件校验失败：已自动重新下载过一次仍不一致。可能是下载源或网络有问题，建议稍后重试。');
+    if (await checkHash(t)) throw new Error('文件校验失败：已自动重新下载过一次仍不一致。可能是下载源或网络有问题，建议稍后重试。');
     t.state = 'done';
     t.etaText = '';
     t.speed = 0;
@@ -154,7 +164,7 @@ const t_state = (t) => t.state;
 
 async function downloadOne(t, url) {
   // 从断点续传
-  let headers = { 'user-agent': 'BlockBox/1.0' };
+  let headers = { 'user-agent': 'WingLaunch/1.0' };
   const partial = t.dest + '.part';
   fs.mkdirSync(path.dirname(partial), { recursive: true });
   const tmpFile = partial;
@@ -193,6 +203,8 @@ async function downloadOne(t, url) {
   idle();
 
   const stream = fs.createWriteStream(tmpFile, { flags: startFrom > 0 ? 'a' : 'w' });
+  // 真实错误仍由下面的 write 回调 reject 传播；这里兜底是为避免流自身 emit 'error' 时无人监听而崩溃主进程
+  stream.on('error', () => { /* */ });
   const reader = res.body.getReader();
   try {
     for (;;) {

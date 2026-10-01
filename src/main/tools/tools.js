@@ -459,6 +459,8 @@ async function runTranslate(taskId, jarPath, instanceId, failedKeys = null) {
   try { saveTM(tmStore); } catch { /* */ }
   broadcast('bb:translate-progress', { taskId, done: task.total, total: task.total, stage: 'done', failedCount: task.failed.length });
   task.result = { packPath: outPath, failed: task.failed, total: task.total };
+  // 结果（含失败明细）延迟回收：留足界面取数时间，又避免多次翻译后 translateTasks 只增不减
+  setTimeout(() => translateTasks.delete(taskId), 30 * 60 * 1000);
 }
 
 function registerTranslate(register) {
@@ -585,7 +587,7 @@ function registerRecipe(register) {
       if (!fs.existsSync(destDir)) throw new UserError('目标文件夹不存在。');
       const zip = new AdmZip();
       const fmt = Number(packFormat) || 48;
-      zip.addFile('pack.mcmeta', Buffer.from(JSON.stringify({ pack: { pack_format: fmt, description: `§b方块盒子配方数据包：${name}` } })));
+      zip.addFile('pack.mcmeta', Buffer.from(JSON.stringify({ pack: { pack_format: fmt, description: `§bWing Launch 配方数据包：${name}` } })));
       for (const r of recipes) {
         const safe = (r.name || 'recipe').replace(/[^a-z0-9_/]/g, '_');
         const dirPath = fmt >= 45 ? 'data/blockbox/recipe/' : 'data/blockbox/recipes/';

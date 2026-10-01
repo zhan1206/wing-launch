@@ -46,7 +46,7 @@ async function fetchText(url, { timeout = 15000, headers = {}, source = 'auto' }
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), timeout);
     try {
-      const res = await fetch(u, { signal: ctl.signal, headers: { 'user-agent': 'BlockBox/1.0 (bmclapi compatible)', ...headers } });
+      const res = await fetch(u, { signal: ctl.signal, headers: { 'user-agent': 'WingLaunch/1.0 (bmclapi compatible)', ...headers } });
       clearTimeout(timer);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();

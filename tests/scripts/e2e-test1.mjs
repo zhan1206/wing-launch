@@ -4,9 +4,9 @@ import { chromium } from 'playwright-core';
 import fs from 'fs';
 import path from 'path';
 
-const ROOT = path.resolve(import.meta.dirname, '..');
+const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const OUT = path.join(ROOT, 'test', 'screens');
-const DATA = path.join(process.env.HOME, 'Library', 'Application Support', 'BlockBox');
+const DATA = path.join(process.env.HOME, 'Library', 'Application Support', 'Wing Launch');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.log('[test1]', ...a);
 const T0 = Date.now();
@@ -44,7 +44,7 @@ try {
 
   // 3) 离线账户
   await shot('03-account');
-  await page.fill('#ob-offline-name', 'BlockBoxTester');
+  await page.fill('#ob-offline-name', 'WingLaunchTester');
   await page.click('#ob-offline-add');
   { let okA = false; for (let i = 0; i < 20; i++) { await sleep(1000); if (await page.evaluate(() => document.body.innerText.includes('✅'))) { okA = true; break; } } if (!okA) throw new Error('账户添加未确认'); }
   await shot('03b-account-added');

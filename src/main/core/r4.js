@@ -4,6 +4,7 @@ const path = require('path');
 const AdmZip = require('adm-zip');
 const config = require('./config');
 const { dirs, instanceDir } = require('./paths');
+const zipsafe = require('./zipsafe');
 const { UserError } = require('./ipc-gateway');
 const { broadcast } = require('./emitter');
 const sources = require('./download/sources');
@@ -219,7 +220,10 @@ async function importMcinstance({ path: p }) {
   let modFiles = 0;
   for (const entry of zip.getEntries()) {
     if (entry.isDirectory || !entry.entryName.startsWith('mods/')) continue;
-    const dest = path.join(inst.dir, entry.entryName);
+    // 防路径穿越：包内条目名可能形如 mods/../../x，仅靠前缀判断不足
+    const rel = zipsafe.safeName(entry.entryName);
+    if (!rel) continue;
+    const dest = path.join(inst.dir, rel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, entry.getData());
     modFiles++;

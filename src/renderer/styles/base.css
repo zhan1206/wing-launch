@@ -1,4 +1,4 @@
-/* ============ 方块盒子 设计系统 base.css ============ */
+/* ============ Wing Launch 设计系统 base.css ============ */
 /* 主题由 CSS 变量驱动：data-mode 控制 明/暗，--accent 由 JS 注入，背景图在 #bg-layer */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

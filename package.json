@@ -1,21 +1,24 @@
 {
   "name": "wing-launch",
   "productName": "Wing Launch",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Wing Launch（WL）- 面向新手的 Minecraft Java 版启动器",
-  "main": "main/main.js",
-  "author": "BlockBox",
+  "main": "src/main/main.js",
+  "author": "Wing Launch",
   "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "start": "electron ."
   },
   "devDependencies": {
-    "electron": "^33.0.0",
-    "@electron/packager": "^18.3.6",
+    "electron": "^44.5.1",
+    "@electron/packager": "^20.3.0",
     "playwright-core": "^1.48.0"
   },
   "dependencies": {
-    "adm-zip": "^0.5.16",
+    "adm-zip": "^0.6.1",
     "jimp": "^1.6.0",
     "prismarine-nbt": "^2.5.0",
     "three": "^0.169.0",
