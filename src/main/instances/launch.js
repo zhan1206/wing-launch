@@ -60,7 +60,7 @@ function buildLaunchArgs({ meta, account, instance, instanceDir, nativesDir, cla
     version_type: meta.type || 'release',
     natives_directory: nativesDir,
     launcher_name: 'BlockBox',
-    launcher_version: '1.0.0',
+    launcher_version: '1.1.0',
     classpath: classpath.join(sep),
     classpath_separator: sep,
     library_directory: dirs().libraries,

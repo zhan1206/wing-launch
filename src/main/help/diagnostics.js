@@ -103,7 +103,7 @@ async function exportDiagnostics() {
   const cfg = config.get();
   const summary = {
     time: new Date().toISOString(),
-    app: 'BlockBox v1.0.0',
+    app: 'BlockBox v1.1.0',
     system: { os: 'macOS ' + os.release(), arch: os.arch(), cpu: os.cpus()[0]?.model || '', memGB: Math.round(os.totalmem() / 1e9) },
     checks: diag.checks,
     settingsSummary: { themeMode: cfg.theme?.mode, homepage: cfg.homepage, memory: cfg.memory, downloadSource: cfg.downloadSource, offlineMode: !!cfg.offlineMode },

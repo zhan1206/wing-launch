@@ -1,7 +1,7 @@
 {
   "name": "wing-launch",
   "productName": "Wing Launch",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Wing Launch（WL）- 面向新手的 Minecraft Java 版启动器",
   "main": "main/main.js",
   "author": "BlockBox",

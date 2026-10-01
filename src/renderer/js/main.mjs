@@ -148,7 +148,7 @@ function renderSidebar(currentPath, settings) {
   const spacer = document.createElement('div'); spacer.className = 'nav-spacer'; sb.appendChild(spacer);
   const foot = document.createElement('div');
   foot.className = 'nav-foot';
-  foot.textContent = 'Wing Launch v' + (window.__APP_VERSION__ || '1.0.0');
+  foot.textContent = 'Wing Launch v' + (window.__APP_VERSION__ || '1.1.0');
   sb.appendChild(foot);
 }
 
